@@ -5,7 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Welcome from "./pages/Welcome";
 import Onboarding from "./pages/Onboarding";
+import JoinWorkspace from "./pages/JoinWorkspace";
+import EmptyDashboard from "./pages/EmptyDashboard";
 import AppLayout from "./components/layout/AppLayout";
 import CrewDashboard from "./pages/dashboard/CrewDashboard";
 import Chat from "./pages/Chat";
@@ -25,8 +28,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/welcome" element={<Welcome />} />
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Onboarding />} />
+          <Route path="/join-workspace" element={<JoinWorkspace />} />
+          <Route path="/empty-dashboard" element={<EmptyDashboard />} />
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<CrewDashboard />} />
             <Route path="chat" element={<Chat />} />

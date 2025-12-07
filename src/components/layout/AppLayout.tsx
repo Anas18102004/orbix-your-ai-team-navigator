@@ -11,7 +11,8 @@ import {
   Plus,
   Sparkles,
   ChevronDown,
-  LogOut
+  LogOut,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +35,15 @@ const navigation = [
   { name: "Team", href: "/app/team", icon: Users },
 ];
 
-const workspaces = [
+// Simulated workspace state - in real app this would come from context/API
+const workspaces: { id: number; name: string; role: string }[] = [
   { id: 1, name: "Backend IT Team", role: "omni" },
   { id: 2, name: "Frontend Platform", role: "crew" },
   { id: 3, name: "Client ABC Support", role: "guest" },
 ];
+
+// For demo: set to empty array to test "no workspaces" state
+// const workspaces: { id: number; name: string; role: string }[] = [];
 
 const AppLayout = () => {
   const location = useLocation();
@@ -70,24 +75,56 @@ const AppLayout = () => {
             <DropdownMenuContent className="w-56" align="start">
               <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {workspaces.map((ws) => (
-                <DropdownMenuItem key={ws.id} className="flex items-center gap-3 py-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
-                    {ws.name.charAt(0)}
+              {workspaces.length === 0 ? (
+                <div className="px-2 py-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    You have not joined or created any workspaces.
+                  </p>
+                  <div className="space-y-2">
+                    <Link to="/onboarding" className="block">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Workspace
+                      </Button>
+                    </Link>
+                    <Link to="/join-workspace" className="block">
+                      <Button variant="ghost" size="sm" className="w-full">
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Join Workspace
+                      </Button>
+                    </Link>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{ws.name}</p>
-                    <Badge variant={ws.role as "omni" | "crew" | "guest"} className="text-[10px] px-1.5 py-0">
-                      {ws.role}
-                    </Badge>
-                  </div>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Workspace
-              </DropdownMenuItem>
+                </div>
+              ) : (
+                <>
+                  {workspaces.map((ws) => (
+                    <DropdownMenuItem key={ws.id} className="flex items-center gap-3 py-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
+                        {ws.name.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{ws.name}</p>
+                        <Badge variant={ws.role as "omni" | "crew" | "guest"} className="text-[10px] px-1.5 py-0">
+                          {ws.role}
+                        </Badge>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <Link to="/onboarding">
+                    <DropdownMenuItem>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Workspace
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link to="/join-workspace">
+                    <DropdownMenuItem>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Join Workspace
+                    </DropdownMenuItem>
+                  </Link>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

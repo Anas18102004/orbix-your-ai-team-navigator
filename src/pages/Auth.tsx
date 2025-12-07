@@ -27,7 +27,8 @@ const Auth = () => {
     setTimeout(() => {
       setIsLoading(false);
       toast.success(mode === "login" ? "Welcome back!" : "Account created successfully!");
-      navigate("/dashboard");
+      // After signup, go to welcome screen; after login, go to app
+      navigate(mode === "login" ? "/app" : "/welcome");
     }, 1000);
   };
 
