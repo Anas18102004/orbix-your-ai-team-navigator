@@ -27,3 +27,15 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+*.so
+
+# System
+Thumbs.db
+.DS_Store
