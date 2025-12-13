@@ -5,11 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api";
+import { socketClient } from "@/lib/socket";
+import { useApp } from "@/contexts/AppContext";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const mode = searchParams.get("mode") || "login";
+  // Try to get context methods, but don't fail if not available (e.g., on first load)
+  let refreshUser: (() => Promise<void>) | null = null;
+  let refreshWorkspaces: (() => Promise<void>) | null = null;
+  try {
+    const appContext = useApp();
+    refreshUser = appContext.refreshUser;
+    refreshWorkspaces = appContext.refreshWorkspaces;
+  } catch {
+    // Context not available, that's okay - it will initialize on next page load
+  }
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,13 +36,62 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate auth
-    setTimeout(() => {
+    try {
+      if (mode === "login") {
+        const result = await apiClient.login({
+          email: formData.email,
+          password: formData.password,
+        });
+        localStorage.setItem('token', result.token);
+        apiClient.setToken(result.token);
+        socketClient.connect(result.token);
+        
+        // Refresh user data and workspaces if context is available
+        if (refreshUser) {
+          await refreshUser();
+        }
+        if (refreshWorkspaces) {
+          await refreshWorkspaces();
+        }
+        
+        toast.success("Welcome back!");
+        navigate("/app");
+      } else {
+        const result = await apiClient.register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+        localStorage.setItem('token', result.token);
+        apiClient.setToken(result.token);
+        socketClient.connect(result.token);
+        
+        // Refresh user data and workspaces if context is available
+        if (refreshUser) {
+          await refreshUser();
+        }
+        if (refreshWorkspaces) {
+          await refreshWorkspaces();
+        }
+        
+        toast.success("Account created successfully!");
+        navigate("/welcome");
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      const errorMessage = error.message || "Authentication failed";
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('Server error') || errorMessage.includes('Failed to fetch')) {
+        toast.error("Cannot connect to server. Please ensure the backend server is running on port 3000.");
+      } else if (errorMessage.includes('Invalid credentials')) {
+        toast.error("Invalid email or password. Please try again.");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
       setIsLoading(false);
-      toast.success(mode === "login" ? "Welcome back!" : "Account created successfully!");
-      // After signup, go to welcome screen; after login, go to app
-      navigate(mode === "login" ? "/app" : "/welcome");
-    }, 1000);
+    }
   };
 
   const isLogin = mode === "login";

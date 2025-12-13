@@ -67,7 +67,7 @@ const EmptyDashboard = () => {
                 Join Workspace
               </Button>
             </Link>
-            <Link to="/onboarding">
+            <Link to="/welcome">
               <Button variant="outline" size="lg">
                 <LayoutGrid className="w-5 h-5 mr-2" />
                 Create Workspace

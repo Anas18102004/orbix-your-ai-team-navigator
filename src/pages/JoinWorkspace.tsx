@@ -11,9 +11,12 @@ import {
   Link as LinkIcon
 } from "lucide-react";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api";
+import { useApp } from "@/contexts/AppContext";
 
 const JoinWorkspace = () => {
   const navigate = useNavigate();
+  const { refreshWorkspaces, setCurrentWorkspace } = useApp();
   const [inviteCode, setInviteCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,12 +28,34 @@ const JoinWorkspace = () => {
     }
     
     setIsLoading(true);
-    // Simulate joining workspace
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Extract code from URL if it's a full link
+      const code = inviteCode.includes('/') 
+        ? inviteCode.split('/').pop()?.trim() 
+        : inviteCode.trim();
+      
+      // Try new join-by-code endpoint first, fallback to old endpoint
+      let result;
+      try {
+        result = await apiClient.joinByCode(code || inviteCode);
+      } catch (error: any) {
+        // Fallback to old endpoint for backward compatibility
+        result = await apiClient.joinWorkspace(code || inviteCode);
+      }
+      
+      // Refresh workspaces list and set the joined workspace as current
+      await refreshWorkspaces();
+      if (result.workspace) {
+        setCurrentWorkspace(result.workspace);
+      }
+      
       toast.success("Successfully joined workspace!");
       navigate("/app");
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to join workspace");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -107,7 +132,7 @@ const JoinWorkspace = () => {
             </div>
 
             <div className="space-y-3">
-              <Link to="/onboarding">
+              <Link to="/welcome">
                 <Button variant="outline" className="w-full">
                   Create a new workspace instead
                 </Button>
