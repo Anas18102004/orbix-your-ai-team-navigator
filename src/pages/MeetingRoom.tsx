@@ -495,20 +495,39 @@ const MeetingRoom = () => {
         transcription: consentTranscription
       });
 
-      // 2. Mediasoup Join
-      await joinRoom(joinData);
+      // DISCRIMINATED RESPONSE HANDLING
+      // Property 1: Join Flow Exclusivity - Never open both internal and external
+      // Property 2: Provider-Specific Join Response - Internal/null never have providerJoinUrl
+      // Property 3: External Provider Join Response - External providers always have providerJoinUrl
 
-      // 3. Produce Local Media
-      if (localStream) {
-        const audioTrack = localStream.getAudioTracks()[0];
-        const videoTrack = localStream.getVideoTracks()[0];
-
-        if (audioTrack && micEnabled) await produce(audioTrack, 'audio');
-        if (videoTrack && cameraEnabled) await produce(videoTrack, 'video');
+      if (joinData.joinMode === 'external' && joinData.providerJoinUrl) {
+        // EXTERNAL PROVIDER: Open provider URL and navigate away
+        toast.success(`Opening ${joinData.meetingProvider} meeting...`);
+        window.open(joinData.providerJoinUrl, '_blank');
+        // Navigate back to meetings list
+        setTimeout(() => {
+          navigate('/app/meetings');
+        }, 1000);
+        return;
       }
 
-      setPhase('in-meeting');
-      toast.success(`Joined ${meeting.title}`);
+      // INTERNAL MEETING: Proceed with mediasoup
+      if (joinData.joinMode === 'sfu') {
+        // 2. Mediasoup Join
+        await joinRoom(joinData);
+
+        // 3. Produce Local Media
+        if (localStream) {
+          const audioTrack = localStream.getAudioTracks()[0];
+          const videoTrack = localStream.getVideoTracks()[0];
+
+          if (audioTrack && micEnabled) await produce(audioTrack, 'audio');
+          if (videoTrack && cameraEnabled) await produce(videoTrack, 'video');
+        }
+
+        setPhase('in-meeting');
+        toast.success(`Joined ${meeting.title}`);
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to join meeting');
     } finally {

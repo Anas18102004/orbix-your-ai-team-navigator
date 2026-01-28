@@ -15,6 +15,12 @@ import { MeetingManager } from '../services/meetings/MeetingManager';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+let globalIO: SocketIOServer | null = null;
+
+export const getIO = (): SocketIOServer | null => {
+  return globalIO;
+};
+
 export const setupSocketIO = (httpServer: HTTPServer) => {
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -23,6 +29,8 @@ export const setupSocketIO = (httpServer: HTTPServer) => {
       credentials: true,
     },
   });
+
+  globalIO = io;
 
   // Authentication middleware for Socket.IO
   io.use(async (socket, next) => {

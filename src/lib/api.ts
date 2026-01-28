@@ -384,11 +384,22 @@ class ApiClient {
   // Meetings API
   async createMeeting(workspaceId: string, data: {
     title: string;
+    description?: string;
     agenda?: string;
+    meetingType?: 'standup' | 'planning' | 'review' | 'retrospective' | '1:1' | 'custom';
     startTime?: string;
+    endTime?: string;
     durationMinutes?: number;
+    timezone?: string;
+    recurrenceRule?: string;
     participantIds?: string[];
+    participants?: Array<{
+      userId: string;
+      role?: 'host' | 'participant' | 'observer';
+    }>;
     record?: boolean;
+    // VIDEO_PROVIDER_HOOK: Optional video provider
+    meetingProvider?: 'zoom' | 'google_meet' | 'internal' | null;
   }) {
     return this.request<{ meetingId: string; meeting: any }>(`/api/workspaces/${workspaceId}/meetings`, {
       method: 'POST',
@@ -406,15 +417,22 @@ class ApiClient {
   }
 
   async joinMeeting(meetingId: string, consent: { recording: boolean; transcription: boolean }) {
-    return this.request<{
-      joinMode: 'sfu' | 'managed';
-      routerRtpCapabilities?: any;
-      createTransportToken?: string;
-      turn?: { urls: string[]; username: string; credential: string };
-      providerJoinUrl?: string;
-      providerToken?: string;
-      meeting: any;
-    }>(`/api/meetings/${meetingId}/join`, {
+    return this.request<
+      | {
+          joinMode: 'sfu';
+          routerRtpCapabilities: any;
+          createTransportToken: string;
+          turn: { urls: string[]; username: string; credential: string };
+          meeting: any;
+        }
+      | {
+          joinMode: 'external';
+          meetingProvider: 'zoom' | 'google_meet';
+          providerJoinUrl: string;
+          providerHostUrl?: string;
+          meeting: any;
+        }
+    >(`/api/meetings/${meetingId}/join`, {
       method: 'POST',
       body: JSON.stringify({ consent }),
     });
@@ -460,6 +478,125 @@ class ApiClient {
     return this.request<{ playbackUrl: string; expiresIn: number; recording: any }>(
       `/api/meetings/${meetingId}/recordings/${recordingId}/playback`
     );
+  }
+
+  // ============================================================================
+  // MEETING MANAGEMENT (EXTENDED)
+  // ============================================================================
+
+  // Update meeting
+  async updateMeeting(meetingId: string, data: {
+    title?: string;
+    description?: string;
+    agenda?: string;
+    meetingType?: 'standup' | 'planning' | 'review' | 'retrospective' | '1:1' | 'custom';
+    startTime?: string;
+    endTime?: string;
+    timezone?: string;
+    recurrenceRule?: string | null;
+    participants?: Array<{
+      userId: string;
+      role?: 'host' | 'participant' | 'observer';
+      attendanceStatus?: 'invited' | 'accepted' | 'declined' | 'attended' | 'absent';
+    }>;
+  }) {
+    return this.request<{ meeting: any }>(`/api/meetings/${meetingId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Cancel meeting (separate from delete)
+  async cancelMeeting(meetingId: string, reason?: string) {
+    return this.request<{ meeting: any; message: string }>(`/api/meetings/${meetingId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // Complete meeting explicitly
+  async completeMeeting(meetingId: string) {
+    return this.request<{ meeting: any; message: string }>(`/api/meetings/${meetingId}/complete`, {
+      method: 'POST',
+    });
+  }
+
+  // Update attendance
+  async updateAttendance(meetingId: string, participantId: string, attendanceStatus: 'invited' | 'accepted' | 'declined' | 'attended' | 'absent') {
+    return this.request<{ participant: any; message: string }>(`/api/meetings/${meetingId}/attendance`, {
+      method: 'PUT',
+      body: JSON.stringify({ participantId, attendanceStatus }),
+    });
+  }
+
+  // ============================================================================
+  // MEETING NOTES
+  // ============================================================================
+
+  async getMeetingNotes(meetingId: string) {
+    return this.request<{ notes: any | null }>(`/api/meetings/${meetingId}/notes`);
+  }
+
+  async saveMeetingNotes(meetingId: string, data: {
+    content?: string;
+    sections?: {
+      discussion?: string | null;
+      decisions?: string | null;
+      risks?: string | null;
+      followups?: string | null;
+    };
+  }) {
+    return this.request<{ notes: any }>(`/api/meetings/${meetingId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============================================================================
+  // MEETING ACTION ITEMS
+  // ============================================================================
+
+  async getMeetingActionItems(meetingId: string) {
+    return this.request<{ actionItems: any[] }>(`/api/meetings/${meetingId}/action-items`);
+  }
+
+  async createActionItem(meetingId: string, data: {
+    title: string;
+    description?: string;
+    assignedTo?: string;
+    dueDate?: string;
+    status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  }) {
+    return this.request<{ actionItem: any }>(`/api/meetings/${meetingId}/action-items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateActionItem(meetingId: string, actionItemId: string, data: {
+    title?: string;
+    description?: string;
+    assignedTo?: string | null;
+    dueDate?: string | null;
+    status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  }) {
+    return this.request<{ actionItem: any }>(`/api/meetings/${meetingId}/action-items/${actionItemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteActionItem(meetingId: string, actionItemId: string) {
+    return this.request<{ success: boolean; message: string }>(`/api/meetings/${meetingId}/action-items/${actionItemId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async linkActionItemToTask(meetingId: string, actionItemId: string, taskId: string) {
+    return this.request<{ actionItem: any; message: string }>(`/api/meetings/${meetingId}/action-items/${actionItemId}/link`, {
+      method: 'POST',
+      body: JSON.stringify({ taskId }),
+    });
   }
 
   async getAIContextDoc(workspaceId: string, docId: string) {

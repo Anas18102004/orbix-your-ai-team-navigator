@@ -21,15 +21,15 @@ const InviteSchema = new Schema<IInvite>(
     orgId: { type: Schema.Types.ObjectId, ref: 'Organization', default: null },
     workspaceId: { type: Schema.Types.ObjectId, ref: 'Workspace', default: null },
     email: { type: String, required: true },
-    invitedRole: { 
-      type: String, 
-      enum: ['org_admin', 'omni', 'crew'], 
-      required: true 
+    invitedRole: {
+      type: String,
+      enum: ['org_admin', 'omni', 'crew'],
+      required: true
     },
-    invitedSpecialization: { 
-      type: String, 
+    invitedSpecialization: {
+      type: String,
       enum: ['backend', 'frontend', 'qa', 'devops', 'pm', 'design', null],
-      default: null 
+      default: null
     },
     roleDecisionMode: {
       type: String,
@@ -38,17 +38,17 @@ const InviteSchema = new Schema<IInvite>(
       default: 'fixed'
     },
     createdByUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    createdByRole: { 
-      type: String, 
-      enum: ['org_admin', 'omni'], 
-      required: true 
+    createdByRole: {
+      type: String,
+      enum: ['org_admin', 'omni'],
+      required: true
     },
-    status: { 
-      type: String, 
-      enum: ['pending', 'accepted', 'revoked', 'expired'], 
-      default: 'pending' 
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'revoked', 'expired'],
+      default: 'pending'
     },
-    code: { type: String, required: true, unique: true },
+    code: { type: String, required: true },
     expiresAt: { type: Date, default: null },
   },
   {

@@ -61,8 +61,8 @@ const Meetings = () => {
   const [filter, setFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [loading, setLoading] = useState(true);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<'schedule' | 'instant'>('schedule');
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-  const [startingInstant, setStartingInstant] = useState(false);
 
   useEffect(() => {
     if (currentWorkspace) {
@@ -102,27 +102,33 @@ const Meetings = () => {
     }
   };
 
-  const handleStartInstant = async () => {
-    if (!currentWorkspace) return;
-    try {
-      setStartingInstant(true);
-      const { meetingId } = await apiClient.createMeeting(currentWorkspace._id, {
-        title: "Quick Sync",
-        agenda: "Instant meeting",
-        startTime: new Date().toISOString(),
-        durationMinutes: 30,
-        record: false
-      });
+  // Open modal in instant mode
+  const handleStartInstant = () => {
+    setScheduleMode('instant');
+    setScheduleOpen(true);
+  };
 
-      // Auto-start
-      await apiClient.startMeeting(meetingId);
+  // Open modal in schedule mode
+  const handleScheduleClick = () => {
+    setScheduleMode('schedule');
+    setScheduleOpen(true);
+  };
 
-      // Navigate to room
-      navigate(`/meeting/${meetingId}`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to start instant meeting');
-    } finally {
-      setStartingInstant(false);
+  // Handle meeting creation callback
+  const handleMeetingCreated = async (result?: { meetingId: string; meeting: any }) => {
+    fetchMeetings();
+    setScheduleOpen(false);
+
+    // For instant meetings, auto-start and navigate
+    if (scheduleMode === 'instant' && result?.meetingId) {
+      try {
+        await apiClient.startMeeting(result.meetingId);
+        navigate(`/meeting/${result.meetingId}`);
+      } catch (error: any) {
+        console.error('Failed to auto-start meeting:', error);
+        // Still navigate even if start fails
+        navigate(`/meeting/${result.meetingId}`);
+      }
     }
   };
 
@@ -193,15 +199,14 @@ const Meetings = () => {
           <Button
             variant="outline"
             onClick={handleStartInstant}
-            disabled={startingInstant}
             className="rounded-md h-10 px-4 font-medium border-border hover:bg-white hover:text-primary transition-colors shadow-sm"
           >
-            {startingInstant ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2 fill-current" />}
+            <Zap className="w-4 h-4 mr-2 fill-current" />
             Instant Meeting
           </Button>
           <Button
             variant="default"
-            onClick={() => setScheduleOpen(true)}
+            onClick={handleScheduleClick}
             className="rounded-md h-10 px-4 font-medium shadow-elevated hover:translate-y-[-1px] transition-all bg-primary text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -356,10 +361,8 @@ const Meetings = () => {
           open={scheduleOpen}
           onOpenChange={setScheduleOpen}
           workspaceId={currentWorkspace._id}
-          onMeetingCreated={() => {
-            fetchMeetings();
-            setScheduleOpen(false);
-          }}
+          mode={scheduleMode}
+          onMeetingCreated={handleMeetingCreated}
         />
       )}
 

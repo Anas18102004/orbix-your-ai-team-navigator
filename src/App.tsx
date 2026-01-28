@@ -21,6 +21,7 @@ import ProjectDefinitionWizard from "./pages/ProjectDefinitionWizard";
 import ProjectUpdates from "./pages/ProjectUpdates";
 import Meetings from "./pages/Meetings";
 import MeetingRoom from "./pages/MeetingRoom";
+import MeetingDetail from "./pages/MeetingDetail";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="team" element={<Team />} />
             <Route path="updates" element={<ProjectUpdates />} />
             <Route path="meetings" element={<Meetings />} />
+            <Route path="meetings/:meetingId" element={<MeetingDetail />} />
             <Route path="settings" element={<Profile />} />
             <Route path="profile" element={<Profile />} />
           </Route>

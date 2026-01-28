@@ -15,7 +15,7 @@ const DirectMessageSchema = new Schema<IDirectMessage>(
     participants: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
     isWorkspaceScoped: { type: Boolean, default: false },
     workspaceId: { type: Schema.Types.ObjectId, ref: 'Workspace', default: null },
-    signature: { type: String, required: true, unique: true },
+    signature: { type: String, required: true },
   },
   {
     timestamps: { createdAt: true, updatedAt: true },
